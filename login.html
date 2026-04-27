@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Clovertees — Login</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --green:#2d6a4f;--green-mid:#40916c;--green-light:#74c69d;--green-pale:#d8f3dc;
+  --ink:#1a1a2e;--ink-soft:#6b7280;--surface:#fff;
+  --font:'Plus Jakarta Sans',sans-serif;
+}
+body{
+  font-family:var(--font);background:#f6f6f4;
+  min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;
+}
+.card{
+  background:rgba(255,255,255,.97);border-radius:24px;padding:44px 40px;
+  width:100%;max-width:420px;box-shadow:0 24px 64px rgba(0,0,0,.4);
+  animation:rise .4s cubic-bezier(.16,1,.3,1);
+}
+@keyframes rise{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
+.logo{text-align:center;margin-bottom:32px}
+.logo-icon{font-size:2.8rem;display:block;margin-bottom:8px}
+.logo h1{font-size:1.5rem;font-weight:800;color:var(--green)}
+.logo p{font-size:.85rem;color:var(--ink-soft);margin-top:3px}
+
+.tabs{display:flex;gap:0;background:#f3f4f6;border-radius:12px;padding:4px;margin-bottom:28px}
+.tab{flex:1;padding:9px;border:none;background:transparent;border-radius:9px;
+  font-family:var(--font);font-size:.88rem;font-weight:600;color:var(--ink-soft);
+  cursor:pointer;transition:all .2s}
+.tab.active{background:var(--green);color:#fff;box-shadow:0 2px 8px rgba(45,106,79,.35)}
+
+.field-label{display:block;font-size:.78rem;font-weight:700;text-transform:uppercase;
+  letter-spacing:.5px;color:var(--ink-soft);margin-bottom:6px}
+.field-input{
+  width:100%;padding:12px 16px;border:2px solid #e5e7eb;border-radius:12px;
+  font-family:var(--font);font-size:1rem;color:var(--ink);outline:none;
+  transition:all .2s;
+}
+.field-input:focus{border-color:var(--green-mid);box-shadow:0 0 0 3px rgba(64,145,108,.12)}
+.field-input.error{border-color:#e63946;box-shadow:0 0 0 3px rgba(230,57,70,.1)}
+
+.err-msg{font-size:.82rem;color:#e63946;font-weight:600;margin-top:8px;
+  min-height:20px;transition:all .2s}
+
+.btn-login{
+  width:100%;margin-top:20px;padding:14px;background:var(--green);border:none;
+  border-radius:12px;color:#fff;font-family:var(--font);font-size:1rem;font-weight:700;
+  cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:8px;
+}
+.btn-login:hover{background:var(--green-mid);box-shadow:0 6px 20px rgba(45,106,79,.35);transform:translateY(-1px)}
+.btn-login:active{transform:translateY(0)}
+.btn-login:disabled{opacity:.6;cursor:not-allowed;transform:none;box-shadow:none}
+
+.hint{font-size:.78rem;color:var(--ink-soft);text-align:center;margin-top:20px;line-height:1.6}
+.spinner-sm{width:18px;height:18px;border:2.5px solid rgba(255,255,255,.3);
+  border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;display:none}
+@keyframes spin{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="logo">
+    <span class="logo-icon">🍀</span>
+    <h1>Clovertees</h1>
+    <p>Production Management</p>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" id="tab-admin" onclick="switchRole('admin')">👑 Admin</button>
+    <button class="tab" id="tab-team" onclick="switchRole('team')">🎽 Tim Produksi</button>
+  </div>
+
+  <label class="field-label" for="nameInput">Nama Anda</label>
+  <input class="field-input" type="text" id="nameInput" placeholder="Masukkan nama Anda..."
+    style="margin-bottom:16px;" onkeydown="if(event.key==='Enter')document.getElementById('passInput').focus()">
+
+  <label class="field-label" for="passInput">Password</label>
+  <input class="field-input" type="password" id="passInput" placeholder="Masukkan password..."
+    autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()">
+  <div class="err-msg" id="errMsg"></div>
+
+  <button class="btn-login" id="loginBtn" onclick="doLogin()">
+    <span class="spinner-sm" id="spinner"></span>
+    <span id="btnText">Masuk →</span>
+  </button>
+
+  <div class="hint" id="roleHint">Login sebagai <b>Admin</b> untuk akses penuh.<br>Admin dapat approve, edit, print, dan geser kartu.</div>
+</div>
+
+<script>
+// ── PASSWORDS (ganti sesuai keinginan) ──
+var PASSWORDS = {
+  admin: 'clover2024',
+  team:  'tim2024'
+};
+
+var selectedRole = 'admin';
+
+function switchRole(role) {
+  selectedRole = role;
+  document.getElementById('tab-admin').classList.toggle('active', role === 'admin');
+  document.getElementById('tab-team').classList.toggle('active', role === 'team');
+  document.getElementById('passInput').value = '';
+  document.getElementById('errMsg').textContent = '';
+  document.getElementById('passInput').classList.remove('error');
+  document.getElementById('roleHint').innerHTML = role === 'admin'
+    ? 'Login sebagai <b>Admin</b> untuk akses penuh.<br>Admin dapat approve, edit, print, dan geser kartu.'
+    : 'Login sebagai <b>Tim Produksi</b>.<br>Tim dapat melihat dan menggeser kartu kanban.';
+}
+
+function doLogin() {
+  var name    = document.getElementById('nameInput').value.trim();
+  var pass    = document.getElementById('passInput').value.trim();
+  var btn     = document.getElementById('loginBtn');
+  var spinner = document.getElementById('spinner');
+  var errEl   = document.getElementById('errMsg');
+
+  errEl.textContent = '';
+  document.getElementById('passInput').classList.remove('error');
+  document.getElementById('nameInput').classList.remove('error');
+
+  if (!name) {
+    errEl.textContent = 'Nama tidak boleh kosong.';
+    document.getElementById('nameInput').classList.add('error');
+    document.getElementById('nameInput').focus();
+    return;
+  }
+
+  if (!pass) {
+    errEl.textContent = 'Password tidak boleh kosong.';
+    document.getElementById('passInput').classList.add('error');
+    document.getElementById('passInput').focus();
+    return;
+  }
+
+  btn.disabled = true;
+  spinner.style.display = 'block';
+  document.getElementById('btnText').textContent = 'Memeriksa...';
+
+  // Simulate tiny delay for UX
+  setTimeout(function() {
+    if (pass === PASSWORDS[selectedRole]) {
+      localStorage.setItem('clv_role', selectedRole);
+      localStorage.setItem('clv_auth', '1');
+      localStorage.setItem('clv_name', name);
+      window.location.href = 'index.html';
+    } else {
+      errEl.textContent = 'Password salah. Coba lagi.';
+      document.getElementById('passInput').classList.add('error');
+      document.getElementById('passInput').value = '';
+      document.getElementById('passInput').focus();
+      btn.disabled = false;
+      spinner.style.display = 'none';
+      document.getElementById('btnText').textContent = 'Masuk →';
+    }
+  }, 500);
+}
+
+// Redirect if already logged in
+if (localStorage.getItem('clv_auth') === '1') {
+  window.location.href = 'index.html';
+}
+</script>
+</body>
+</html>

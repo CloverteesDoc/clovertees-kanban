@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Clovertees — Production Board</title>
+<link rel="icon" type="image/png" href="logo.png">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<!-- Mobile sidebar overlay -->
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
+<!-- ══ SIDEBAR ═══════════════════════════════════════════════ -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-logo">
+    <span class="leaf">🍀</span> Clovertees
+  </div>
+  <div class="sidebar-section">Proyekku</div>
+  <div id="sidebarProjects"></div>
+  <div class="sidebar-add" id="btnNewProject" onclick="newProject()">
+    <span>＋</span> Proyek baru
+  </div>
+</aside>
+
+<!-- ══ MAIN ══════════════════════════════════════════════════ -->
+<div class="main">
+
+  <!-- Topbar -->
+  <div class="topbar">
+    <button class="btn btn-ghost btn-sm" id="sidebarToggle"
+      onclick="document.getElementById('sidebar').classList.toggle('mobile-open');document.getElementById('sidebarOverlay').style.display=document.getElementById('sidebar').classList.contains('mobile-open')?'block':'none'">☰</button>
+    <div class="sync-badge">
+      <span class="sync-dot" id="syncDot"></span>
+      <span style="font-size:.78rem;color:var(--text-3)" id="syncLabel">Clovertees Production Board</span>
+    </div>
+    <div class="topbar-spacer"></div>
+    <div class="topbar-search">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      <input class="search-input-real" type="text" id="searchInput" placeholder="Cari tugas..." oninput="onSearch(this.value)">
+    </div>
+    <div style="font-size:.82rem;color:var(--text-3)" id="roleLabel"></div>
+    <button class="btn btn-outline btn-sm" onclick="Auth.logout()">Keluar</button>
+  </div>
+
+  <!-- Project header -->
+  <div class="proj-header">
+    <div class="proj-header-top">
+      <div class="proj-title-wrap">
+        <span id="projTitle" class="proj-title" contenteditable="true" placeholder="Nama Proyek" spellcheck="false"></span>
+      </div>
+      <div class="proj-header-actions">
+        <button class="btn btn-ghost btn-sm" onclick="if(S.activeProjectId)projMenu(event,S.activeProjectId)">···</button>
+      </div>
+    </div>
+    <div class="proj-tabs">
+      <div class="proj-tab active">📋 Board</div>
+    </div>
+  </div>
+
+  <!-- Board -->
+  <div class="board-scroll">
+    <div class="board" id="board">
+      <div style="padding:40px;color:var(--text-3)">Memuat data...</div>
+    </div>
+  </div>
+</div>
+
+<!-- Panel backdrop (klik luar → tutup panel) -->
+<div class="panel-backdrop" id="panelBackdrop" onclick="closePanel()"></div>
+
+<!-- ══ DETAIL PANEL (single scroll, no tabs) ════════════════ -->
+<aside class="detail-panel" id="detailPanel">
+
+  <!-- Header: judul besar + close -->
+  <div class="panel-header">
+    <div style="display:flex;align-items:center;justify-content:flex-end;margin-bottom:6px">
+      <button class="btn btn-ghost btn-sm" onclick="closePanel()">✕ Tutup</button>
+    </div>
+    <div id="panelTitle" class="panel-title-edit" contenteditable="true"
+      onblur="savePanelTitle()"
+      onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}"
+      placeholder="Nama tugas..."></div>
+    <div class="panel-header-row" style="margin-top:8px">
+      <span class="status-badge" id="panelColBadge">—</span>
+      <span id="panelSourceInfo" style="display:none;font-size:.75rem;padding:3px 8px;background:var(--green-pale);color:var(--green);border-radius:4px;font-weight:600">
+        📦 <span id="panelSourceId"></span>
+      </span>
+    </div>
+  </div>
+
+  <!-- Info row: Prioritas + Due Date + Assignee (1 baris) -->
+  <div class="panel-info-row">
+    <div class="info-field">
+      <label>Prioritas</label>
+      <select id="panelPriority">
+        <option value="">— Pilih —</option>
+        <option value="High">🔴 High</option>
+        <option value="Medium">🟡 Medium</option>
+        <option value="Low">🟢 Low</option>
+      </select>
+    </div>
+    <div class="info-field">
+      <label>Due Date</label>
+      <input type="date" id="panelDueDate">
+    </div>
+    <div class="info-field">
+      <label>Assignee</label>
+      <input type="text" id="panelAssignee" placeholder="Nama tim...">
+    </div>
+  </div>
+
+  <!-- Single scroll body -->
+  <div class="panel-scroll" id="panelScroll">
+
+    <!-- ① Detail Order / Catatan -->
+    <div class="panel-section-hdr">📝 Detail Order & Catatan</div>
+    <div class="panel-section-body">
+      <textarea class="notes-area" id="panelNotes" placeholder="Detail order atau catatan produksi..." rows="9"></textarea>
+    </div>
+
+    <!-- Tombol aksi -->
+    <div class="panel-action-row">
+      <button class="btn btn-primary btn-sm" onclick="savePanel()">💾 Simpan</button>
+      <div id="panelPrint" style="display:none;gap:6px;align-items:center">
+        <button class="btn btn-outline btn-sm" onclick="printLabel()">🏷️ Label</button>
+        <button class="btn btn-outline btn-sm" onclick="printSlip()">📄 Slip</button>
+      </div>
+      <button class="btn btn-danger btn-sm" onclick="delTask(S.openTaskId)">🗑 Hapus</button>
+    </div>
+
+    <!-- Tabs for Comments and Activity -->
+    <div class="panel-tabs" style="margin-top: 16px;">
+      <div class="panel-tab active" onclick="switchPanelTab('comments', this)">💬 Komentar</div>
+      <div class="panel-tab" onclick="switchPanelTab('activity', this)">📜 Aktivitas</div>
+    </div>
+
+    <div class="panel-pane active" id="pane-comments">
+      <div class="comments-list" id="commentsList" style="padding-bottom: 20px;"></div>
+    </div>
+
+    <div class="panel-pane" id="pane-activity">
+      <div class="activity-list" id="activityList" style="padding-bottom: 20px;"></div>
+      <div class="panel-created-ts" id="panelCreated"></div>
+    </div>
+
+  </div><!-- /panel-scroll -->
+
+  <div class="comment-input-wrap" id="commentInputWrap" style="border-top: 1px solid var(--border); padding: 12px 22px; background: #fff; flex-shrink: 0;">
+    <textarea class="comment-input" id="commentInput" rows="2"
+      placeholder="Tulis komentar... (Enter kirim, Shift+Enter baris baru)"></textarea>
+    <div class="attach-toolbar">
+      <button class="attach-btn" type="button" onclick="document.getElementById('fileAttach').click()">📎 Lampirkan gambar</button>
+      <input type="file" id="fileAttach" accept="image/*" multiple style="display:none" onchange="onFileAttach(this)">
+      <span class="attach-hint">atau paste (Ctrl+V)</span>
+    </div>
+    <div class="attach-preview-wrap" id="attachPreview"></div>
+    <div style="display:flex;justify-content:flex-end;margin-top:8px">
+      <button class="btn btn-primary btn-sm" onclick="submitComment()">Kirim 💬</button>
+    </div>
+  </div>
+
+</aside>
+
+<!-- ══ TOAST ══════════════════════════════════════════════════ -->
+<div class="toast-wrap" id="toastWrap"></div>
+<div id="print-root"></div>
+
+<!-- Lightbox fullscreen image -->
+<div class="img-lightbox" id="imgLightbox" onclick="this.classList.remove('open')">
+  <img id="imgLightboxSrc" src="" alt="Preview">
+</div>
+
+<!-- ══ SCRIPTS ════════════════════════════════════════════════ -->
+<script src="js/config.js"></script>
+<script src="js/api.js"></script>
+<script src="js/app.js"></script>
+<script>
+window.addEventListener('DOMContentLoaded', function () {
+  if (!Auth.init()) return;
+  S.role = localStorage.getItem('clv_role') || 'team';
+  S.name = localStorage.getItem('clv_name') || '';
+  var roleText = S.role === 'admin' ? '👑 Admin' : '🎽 Tim Produksi';
+  document.getElementById('roleLabel').textContent = S.name ? S.name + ' (' + roleText + ')' : roleText;
+  if (!isAdmin()) document.getElementById('btnNewProject').style.display = 'none';
+
+  // Enter kirim komentar
+  document.getElementById('commentInput').addEventListener('keydown', function(e){
+    if(e.key === 'Enter' && !e.shiftKey){ e.preventDefault(); submitComment(); }
+  });
+  setupTitleEdit();
+  boot();
+});
+function closeSidebar(){
+  document.getElementById('sidebar').classList.remove('mobile-open');
+  document.getElementById('sidebarOverlay').style.display = 'none';
+}
+</script>
+</body>
+</html>
